@@ -29,6 +29,13 @@ jobs:
         run: |
           cd "$GITHUB_WORKSPACE"
           promptfoo redteam generate --force --config ./teste-sem-judge.yml --output ./redteam-tests-sem-judge.yml
+      
+      - name: Generate red team tests (with judge)
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          promptfoo redteam generate --force --config ./teste.yml --output ./redteam-tests.yml
 
       - name: Upload red team tests
         uses: actions/upload-artifact@v4
@@ -36,6 +43,7 @@ jobs:
           name: redteam-tests
           path: |
             redteam-tests-sem-judge.yml
+            redteam-tests.yml
 
       - name: Evaluate with LLM-as-judge
         env:
