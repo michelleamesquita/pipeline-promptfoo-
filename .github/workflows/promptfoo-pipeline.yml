@@ -1,0 +1,86 @@
+name: promptfoo-pipeline
+
+on:
+  workflow_dispatch:
+
+jobs:
+  eval:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install promptfoo
+        run: npm install -g promptfoo@latest
+
+      - name: Generate red team tests (plugin)
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          promptfoo redteam generate --force --config ./teste-sem-judge.yml --output ./redteam-tests-sem-judge.yml
+
+      - name: Upload red team tests
+        uses: actions/upload-artifact@v4
+        with:
+          name: redteam-tests
+          path: |
+            redteam-tests-sem-judge.yml
+
+      - name: Evaluate with LLM-as-judge
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          promptfoo eval -c ./redteam-tests.yml --output ./llm-judge-results.json
+
+      - name: Upload LLM-as-judge results
+        uses: actions/upload-artifact@v4
+        with:
+          name: llm-judge-results
+          path: |
+            llm-judge-results.json
+
+      - name: Add prompt metrics
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          python3 add_prompt_metrics.py
+
+      - name: Upload prompt metrics
+        uses: actions/upload-artifact@v4
+        with:
+          name: prompt-metrics
+          path: |
+            prompt_metrics.json
+
+      - name: Summarize scores
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          python3 summarize_scores.py
+          echo "----- score_summary.md -----"
+          cat score_summary.md
+      - name: Upload score summary
+        uses: actions/upload-artifact@v4
+        with:
+          name: score-summary
+          path: |
+            score_summary.md
+
+  human_approval:
+    runs-on: ubuntu-latest
+    needs: [eval]
+    environment: human-approval
+    steps:
+      - name: Manual validation
+        run: |
+          echo "✅ Human-in-the-loop: modelos validados e aceitos."
