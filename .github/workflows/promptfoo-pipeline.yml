@@ -117,6 +117,10 @@ jobs:
           python3 summarize_scores.py
           echo "----- score_summary.md -----"
           cat score_summary.md
+          {
+            echo "## Score Summary"
+            cat score_summary.md
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload summary outputs
         uses: actions/upload-artifact@v4
