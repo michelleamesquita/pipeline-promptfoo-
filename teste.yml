@@ -6,9 +6,9 @@ providers:
   - openai:gpt-4
   - openai:gpt-4o-mini
 
-# targets:
-#   - id: openai:gpt-4o
-#   - id: openai:gpt-4o-mini
+targets:
+  - id: openai:gpt-4o
+  - id: openai:gpt-4o-mini
 
 redteam:
   provider: openai:gpt-4o-mini
